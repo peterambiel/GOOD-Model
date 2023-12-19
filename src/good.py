@@ -17,9 +17,9 @@ class model_opt():
 
             self.Build()
 
-    def Solve(self,solver_kwargs={}):
+    def Solve(self,solver_name):
 
-        solver=SolverFactory(**solver_kwargs)
+        solver=SolverFactory(solver_name)
         solver.solve(self.model)
 
         self.solution=self.Solution()
@@ -74,7 +74,6 @@ class model_opt():
         self.time0 = time.time()
         self.genLimits()
         self.t1=time.time()
-
         print(f"Generation Limits build: {print_time(self.t0, self.t1)}")
 
         #constraint 3: transmission limits
@@ -324,10 +323,9 @@ class model_opt():
                 else: 
                     constraint_expr = (pyomo.Constraint.Skip)
                     
-                self.model.trans_limits_rule.add(constraint_expr)
+                    self.model.trans_limits_rule.add(constraint_expr)
 	
     # constraint 3a: transmission system balance - system level transmission balancing
-
     def transBalance(self): 
 
         self.model.trans_balance_rule = pyomo.ConstraintList()
@@ -342,7 +340,7 @@ class model_opt():
                     else: 
                         constraint_expr = (pyomo.Constraint.Skip)
 
-                    self.model.trans_balance_rule.add(constraint_expr)
+                        self.model.trans_balance_rule.add(constraint_expr)
 
 
     #constraint 4: storage limits (r,t)
@@ -358,9 +356,9 @@ class model_opt():
                     ) >= 0
             
                 else: 
-                        constraint_expr = (pyomo.Constraint.Skip)
+                    constraint_expr = (pyomo.Constraint.Skip)
                 
-                self.model.maxStorage_rule.add(constraint_expr)
+                    self.model.maxStorage_rule.add(constraint_expr)
 
     #constraint 5: storage state-of-charge (r,t)
     def storSOC(self):
@@ -378,7 +376,7 @@ class model_opt():
                         self.model.x_storSOC[r,t] - self.model.x_storSOC[r,t-1] - self.model.x_storIn[r,t-1] * self.model.c_storEff + self.model.x_storOut[r,t-1]  
                     ) == 0
                     
-                self.model.storageSOC_rule.add(constraint_expr)
+                    self.model.storageSOC_rule.add(constraint_expr)
 
     #constraint 6: storage flow-in limits (charging)
     def storFlowIn(self): 
@@ -392,7 +390,7 @@ class model_opt():
                         self.model.c_storCap[r] * self.model.c_storFlowCap - self.model.x_storIn[r,t]
                         ) >= 0 
                 
-                self.model.stor_flowIN_rule.add(constraint_expr)
+                    self.model.stor_flowIN_rule.add(constraint_expr)
 
     #constaint 7: storage flow out limits (discharging)
     def storFlowOut(self):
@@ -406,7 +404,7 @@ class model_opt():
                         self.model.c_storCap[r] * self.model.c_storFlowCap - self.model.x_storOut[r,t]
                     ) >=0
                 
-                self.model.stor_flowOUT_rule.add(constraint_expr)
+                    self.model.stor_flowOUT_rule.add(constraint_expr)
 
 
     #constraint 8: solar resource capacity limits
@@ -415,14 +413,15 @@ class model_opt():
         self.model.solar_install_limits_rule = pyomo.ConstraintList()
 
         for r in self.model.r: 
-            for s in self.model.src: 
-                for c in self.model.cc:
-                    if (r,s,c) in self.model.c_solarMax: 
+            if r in self.model.c_solarMax: 
+                for s in self.model.src: 
+                    for c in self.model.cc:
+
                         constraint_expr = (
-                            self.model.c_solarMax[r,s,c] - (self.model.x_solarNew[r,s,c] + self.model.c_solarCap[r])
+                                self.model.c_solarMax[r,s,c] - (self.model.x_solarNew[r,s,c] + self.model.c_solarCap[r])
                         ) >= 0
-                
-                    self.model.solar_install_limits_rule.add(constraint_expr)  
+                    
+                        self.model.solar_install_limits_rule.add(constraint_expr)  
 
 
     #constraint 9: wind resource capacity limts
@@ -431,14 +430,15 @@ class model_opt():
         self.model.wind_cap_limits_rule = pyomo.ConstraintList()
 
         for r in self.model.r: 
-            for w in self.model.wrc: 
-                for c in self.model.cc:
-                    if (r,w,c) in self.model.c_windMax:
+            if r in self.model.c_windMax:
+                for w in self.model.wrc: 
+                    for c in self.model.cc:
+                        
                         constraint_expr = (
-                            self.model.c_windMax[r,w,c] - (self.model.x_windNew[r,w,c] + self.model.c_windCap[r])
+                                self.model.c_windMax[r,w,c] - (self.model.x_windNew[r,w,c] + self.model.c_windCap[r])
                         ) >= 0
-                    
-                    self.model.wind_install_limits_rule.add(constraint_expr)  
+                        
+                        self.model.wind_install_limits_rule.add(constraint_expr)  
 
     '''
     #constraint 10: electricity import limits
