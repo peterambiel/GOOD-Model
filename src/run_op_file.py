@@ -1,12 +1,12 @@
 import pickle as pkl
-
-
+import highspy
+import time
 
 import src
 from src.reload import deep_reload
 
 #Change this to point to your version of cbc or use another solver
-solver_kwargs={'_name':'cbc','executable':'src/cbc'}
+solver_name='appsi_highs'
 
 # import the model data to data_inputs.py
 def load_data(filepath):        
@@ -24,4 +24,12 @@ set_inputs = src.data_inputs.extract_sets(model_data)
 param_inputs = src.data_inputs.extract_params(model_data)
 
 # run problem
+t0=time.time()
 problem=src.good.model_opt(set_inputs, param_inputs)
+
+#solve problem
+t1=time.time()
+solution = problem.Solve(solver_name)
+t2=time.time()
+
+print(problem.model.objective(),t1-t0,t2-t1)
