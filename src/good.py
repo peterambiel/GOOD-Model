@@ -330,7 +330,6 @@ class model_opt():
                         storage_term + export_term - import_term - demand_term 
                 ) == 0
 				
-        
         self.model.gen_to_demand_rule.add(constraint_expr)	
 				
     #constraint 2: Generation Limits   
@@ -370,7 +369,7 @@ class model_opt():
 
     def transBalance(self): 
 
-        self.model.trans_balance_rul = pyomo.ConstraintList()
+        self.model.trans_balance_rule = pyomo.ConstraintList()
 
         for r in self.model.r: 
             for o in self.model.o:
@@ -388,7 +387,7 @@ class model_opt():
     #constraint 4: storage limits (r,t)
     def storLimits(self):
 	
-        self.model.maxStorage = pyomo.ConstraintList()
+        self.model.maxStorage_rule = pyomo.ConstraintList()
 
         for r in self.model.r: 
             if r in self.model.c_storCap:
@@ -400,7 +399,7 @@ class model_opt():
                 else: 
                         constraint_expr = (pyomo.Constraint.Skip)
                 
-                self.model.maxStorage.add(constraint_expr)
+                self.model.maxStorage_rule.add(constraint_expr)
 
     #constraint 5: storage state-of-charge (r,t)
     def storSOC(self):
@@ -452,7 +451,7 @@ class model_opt():
     #constraint 8: solar resource capacity limits
     def solarCapLimits(self):
     
-        self.model.solar_cap_limits_rule = pyomo.ConstraintList()
+        self.model.solar_install_limits_rule = pyomo.ConstraintList()
 
         for r in self.model.r: 
             for s in self.model.src: 
@@ -462,7 +461,7 @@ class model_opt():
                             self.model.c_solarMax[r,s,c] - (self.model.x_solarNew[r,s,c] + self.model.c_solarCap[r])
                         ) >= 0
                 
-                    self.model.solar_cap_limits_rule.add(constraint_expr)  
+                    self.model.solar_install_limits_rule.add(constraint_expr)  
 
 
     #constraint 9: wind resource capacity limts
@@ -478,7 +477,7 @@ class model_opt():
                             self.model.c_windMax[r,w,c] - (self.model.x_windNew[r,w,c] + self.model.c_windCap[r])
                         ) >= 0
                     
-                    self.model.wind_cap_limits_rule.add(constraint_expr)  
+                    self.model.wind_install_limits_rule.add(constraint_expr)  
 
     '''
     #constraint 10: electricity import limits
