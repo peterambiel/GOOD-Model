@@ -37,131 +37,94 @@ class model_opt():
 		#Initializing the model as a concrete model (as in one that has fixed inputted values)
         self.model=pyomo.ConcreteModel()
 		
-        #Adding sets
-
-        self.t0=time.time()
-        self.Set()
-        self.t1=time.time()
+        # timer function
         def print_time(time0, time1):
             elasped_time = time1 - time0 
             return(elasped_time)
-        print(f"Sets build: {print_time(self.t0, self.t1)}")
+
+        #Adding sets
+        self.t0=time.time()
+        self.Set()
+        self.t1=time.time()
+        print(f"Set build: {print_time(self.t0, self.t1)}")
 	
         #Adding parameters
         self.t0=time.time()
         self.Param()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Param build: {print_time(self.t0, self.t1)}")
 
 		#Adding variables
         self.t0=time.time()
         self.Variables()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Var build: {print_time(self.t0, self.t1)}")
 
 		#Adding the objective function
         self.t0=time.time()
         self.Objective()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Objective build: {print_time(self.t0, self.t1)}")
 	
         #constraint 1: genToDemand(t, r) with evload constraint
         self.t0 = time.time()
         self.genToDemand()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Balancing build: {print_time(self.t0, self.t1)}")
 
         #constraint 2: Generation Limits
         self.time0 = time.time()
         self.genLimits()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
+
         print(f"Generation Limits build: {print_time(self.t0, self.t1)}")
 
         #constraint 3: transmission limits
         self.t0=time.time()
         self.transLimits()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Transmission Limits build: {print_time(self.t0, self.t1)}")
 
         #constraint 3a: transission balance
         self.t0=time.time()
         self.transBalance()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Transmission Balance build: {print_time(self.t0, self.t1)}")
 
         #constraint 4: storage limits (r,t)
         self.t0=time.time()
         self.storLimits()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Storage Limits Constraints build: {print_time(self.t0, self.t1)}")
 
         #constraint 5: storage state-of-charge (r,t)
         self.t0=time.time()
         self.storSOC()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Storage SOC Constraint build: {print_time(self.t0, self.t1)}")
 
         #constraint 6: storage flow-in limits (charging)
         self.t0=time.time()
         self.storFlowIn()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Storage Charge Consttraint build: {print_time(self.t0, self.t1)}")
 
         #constaint 7: storage flow out limits (discharging)
         self.t0=time.time()
         self.storFlowOut()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Storage Discharge Constraint build: {print_time(self.t0, self.t1)}")
 
         #constraint 8: solar resource capacity limits
         self.t0=time.time()
         self.solarCapLimits()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Solar Capacity Constraint build: {print_time(self.t0, self.t1)}")
 
         #constraint 9: wind resource capacity limts
         self.t0=time.time()
         self.windCapLimits()
         self.t1=time.time()
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
         print(f"Wind Capacity Constraint build: {print_time(self.t0, self.t1)}")
 
         #constraint 10: electricity import limits
