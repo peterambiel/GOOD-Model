@@ -121,7 +121,7 @@ class model_opt():
 
         #constraint 5: storage state-of-charge (r,t)
         self.t0=time.time()
-        self.storSCO()
+        self.storSOC()
         self.t1=time.time()
         def print_time(time0, time1):
             elasped_time = time1 - time0 
