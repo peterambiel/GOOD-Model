@@ -1,6 +1,4 @@
 import time 
-import numpy as np
-import pandas as pd 
 import pyomo.environ as pyomo
 from pyomo.opt import SolverFactory
 
@@ -21,7 +19,7 @@ class model_opt():
 
     def Solve(self,solver_kwargs={}):
 
-        solver=pyomo.SolverFactory(**solver_kwargs)
+        solver=SolverFactory(**solver_kwargs)
         solver.solve(self.model)
 
         self.solution=self.Solution()
