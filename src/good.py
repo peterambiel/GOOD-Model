@@ -341,12 +341,13 @@ class model_opt():
         for r in self.model.r:
             for gf in self.model.gf: 
                 if (r,gf) in self.model.c_genMax: 
-                    constraint_expr = ( 
-                        (self.model.c_genMax[r,gf] - (self.model.x_generation[r,gf,t] for t in self.model.t))
-                        ) >= 0
-                    
-                    self.model.gen_limits_rule.add(constraint_expr)
-	
+                    for t in self.model.t:
+                        constraint_expr = (
+                            self.model.c_genMax[r,gf] - self.model.x_generation[r,gf,t]
+                            ) >= 0
+                        
+                        self.model.gen_limits_rule.add(constraint_expr)
+        
 
     #constraint 3: transmission limits
     def transLimits(self):
