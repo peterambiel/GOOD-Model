@@ -342,7 +342,7 @@ class model_opt():
             for gf in self.model.gf: 
                 if (r,gf) in self.model.c_genMax: 
                     constraint_expr = ( 
-                        self.model.c_genMax[r,gf] - self.model.x_generation[r,gf,t] for t in self.model.t
+                        self.model.c_genMax[r,gf] - (self.model.x_generation[r,gf,t] for t in self.model.t)
                         ) >= 0
                     
                     self.model.gen_limits_rule.add(constraint_expr)
