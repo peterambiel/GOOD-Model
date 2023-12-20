@@ -1,5 +1,5 @@
 ''' 
-This packages require the use to install highspy (pip install highspy)
+This file requires the use to install highspy (pip install highspy)
 to access the HiGHs solver. HiGHs documentation can be found here: 
 https://highs.dev/ or https://github.com/ERGO-Code/HiGHS 
 '''
