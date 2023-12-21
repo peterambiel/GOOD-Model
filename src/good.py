@@ -203,35 +203,35 @@ class model_opt():
 
             def obj_func_rule(model):
                 
-                gen_cost_term = 0
-                for r in model.r:
-                    for gf in model.gf:
-                        if (r,gf) in self.model.c_gencost:
-                            gen_cost_term += sum(model.x_generation[r, gf, t] * model.c_gencost[r, gf] for t in self.model.t)
+                gen_cost_indices = [(r, gf) for r in model.r for gf in model.gf if (r, gf) in model.c_gencost]
+                gen_cost_term = pyomo.quicksum(model.x_generation[r, gf, t] * model.c_gencost[r, gf] 
+                                for (r,gf) in gen_cost_indices
+                                for t in self.model.t
+                                )
                 
-                trans_cost_term = 0 
-                for r in self.model.r: 
-                    for o in self.model.o: 
-                        if (r,o) in self.model.c_transCost: 
-                            trans_cost_term += sum(self.model.x_trans[r,o,t] * self.model.c_transCost[r, o] for t in self.model.t)
-
-                solar_cost_term = 0 
-                for r in self.model.r: 
-                    for s in self.model.src: 
-                        for c in self.model.cc: 
-                            if (r,s,c) in self.model.c_solarCost: 
-                                solar_cost_term += (self.model.c_solarCost[r,s,c] * self.model.x_solarNew[r,s,c]) 
-
-                wind_cost_term = 0 
-                for r in self.model.r: 
-                    for w in self.model.src: 
-                        if (r,w) in self.model.c_windTransCost: 
-                            for c in self.model.cc: 
-                                if (r,w,c) in self.model.c_windCost: 
-                                    wind_cost_term += ((self.model.c_windCost[r,w,c] + self.model.c_windTransCost[r,w]) * self.model.x_windNew[r,w,c])
+                trans_cost_indices = [(r,o) for r in self.model.r for o in self.model.o if (r,o) in self.model.c_transCost]
+                trans_cost_term = pyomo.quicksum( self.model.x_trans[r, o, t] * self.model.c_transCost[r, o]
+                                for (r, o) in trans_cost_indices
+                                for t in self.model.t
+                                )
                 
+                
+                solar_cost_indices = [(r,s,c) for r in self.model.r for s in self.model.src for c in self.model.cc if (r,s,c) in self.model.c_solarCost]
+                solar_cost_term = pyomo.quicksum(self.model.c_solarCost[r,s,c] * self.model.x_solarNew[r,s,c] 
+                                for (r,s,c) in solar_cost_indices
+                                )
+                
+
+                wind_cost_indices = [(r, w, c) for r in self.model.r for w in self.model.wrc for c in self.model.cc if (r, w, c) in self.model.c_windCost and (r, w) in self.model.c_windTransCost]
+                wind_cost_term = pyomo.quicksum(
+                                (self.model.c_windCost[r, w, c] + self.model.c_windTransCost[r, w]) * self.model.x_windNew[r, w, c]
+                                for r, w, c in wind_cost_indices
+                                )
+
                 return (
-                    gen_cost_term + trans_cost_term + solar_cost_term + wind_cost_term
+                    gen_cost_term 
+                    + trans_cost_term 
+                    + solar_cost_term + wind_cost_term
                 )
 
             self.model.obj_func = pyomo.Objective(rule=obj_func_rule, sense=pyomo.minimize)
@@ -241,53 +241,46 @@ class model_opt():
 
         self.model.gen_to_demand_rule = pyomo.ConstraintList()
         
-        generation_term = 0
-        for r in self.model.r:
-            for t in self.model.t: 
-                for gf in self.model.gf: 
-                    generation_term += self.model.x_generation[r,gf,t] 
+        generation_term = pyomo.quicksum(
+                    self.model.x_generation[r, gf, t]
+                    for r in self.model.r
+                    for gf in self.model.gf
+                    for t in self.model.t
+                )
 
-        solar_term = 0 
-        for r in self.model.r: 
-            for s in self.model.src: 
-                for c in self.model.cc: 
-                    if(r,s,c) in self.model.c_solarCap: 
-                        for t in self.model.t: 
-                            solar_term += (self.model.c_solarCap[r,s,c] + self.model.x_solarNew[r,s,c]) * self.model.c_solarCF[r,t,s,c]
+        solar_cap_indices = [(r,s,c) for r in self.model.r for s in self.model.src for c in self.model.cc if (r,s,c) in self.model.c_solarCap]
+        solar_term = pyomo.quicksum((self.model.c_solarCap[r,s,c] + self.model.x_solarNew[r,s,c]) * self.model.c_solarCF[r,t,s,c]
+                    for (r,s,c) in solar_cap_indices
+                    for t in self.model.t)
 
-        wind_term = 0 
-        for r in self.model.r: 
-            for w in self.model.src: 
-                for c in self.model.cc: 
-                    if(r,w,c) in self.model.c_windCap: 
-                        for t in self.model.t: 
-                            wind_term += (self.model.c_windCap[r,w,c] + self.model.x_windNew[r,w,c]) * self.model.c_windCF[r,t,w,c]
+        wind_cap_indices = [(r,w,c) for r in self.model.r for w in self.model.wrc for c in self.model.cc if (r,w,c) in self.model.c_windCap]
+        wind_term = pyomo.quicksum((self.model.c_windCap[r,w,c] + self.model.x_windNew[r,w,c]) * self.model.c_windCF[r,t,w,c]
+                    for (r,w,c) in wind_cap_indices
+                    for t in self.model.t)
 
-        storage_term = 0 
-        for r in self.model.r: 
-            for t in self.model.t: 
-                storage_term += self.model.x_storOut[r,t] - self.model.x_storIn[r,t]
+        storage_term = pyomo.quicksum(
+                    self.model.x_storOut[r, t] - self.model.x_storIn[r, t]
+                    for r in self.model.r
+                    for t in self.model.t)
+        
+        export_term = pyomo.quicksum(self.model.x_trans[r,o,t] * self.model.c_transLoss
+                    for r in self.model.r 
+                    for o in self.model.o 
+                    for t in self.model.t)
 
-        export_term = 0 
-        for r in self.model.r: 
-            for o in self.model.o: 
-                for t in self.model.t: 
-                    export_term += self.model.x_trans[r,o,t] * self.model.c_transLoss
+        import_term = pyomo.quicksum(self.model.x_trans[o,r,t] * self.model.c_transLoss
+                    for r in self.model.o 
+                    for o in self.model.r 
+                    for t in self.model.t)
+        
+        demand_indices = [(r,t) for r in self.model.r for t in self.model.t if (r,t) in self.model.c_demandLoad]
+        demand_term = pyomo.quicksum(self.model.c_demandLoad[r,t]
+                    for (r,t) in demand_indices)
 
-        import_term = 0
-        for o in self.model.o: 
-            for r in self.model.r: 
-                for t in self.model.t:  
-                    import_term += self.model.x_trans[o,r,t]
-
-        demand_term = 0 
-        for r in self.model.r: 
-                for t in self.model.t: 
-                    if (r,t) in self.model.c_demandLoad:
-                        demand_term += self.model.c_demandLoad[r,t]
-
-        constraint_expr = (generation_term + solar_term + wind_term + 
-                        storage_term + export_term - import_term - demand_term 
+        constraint_expr = (generation_term + 
+                        solar_term + wind_term + 
+                        storage_term + export_term - 
+                        import_term - demand_term 
                 ) == 0
 				
         self.model.gen_to_demand_rule.add(constraint_expr)	
@@ -297,15 +290,14 @@ class model_opt():
 	
         self.model.gen_limits_rule = pyomo.ConstraintList() 
 
-        for r in self.model.r:
-            for gf in self.model.gf: 
-                if (r,gf) in self.model.c_genMax: 
-                    for t in self.model.t:
-                        constraint_expr = (
-                            self.model.c_genMax[r,gf] - self.model.x_generation[r,gf,t]
-                            ) >= 0
+        gen_limts_indices = [(r,gf) for r in self.model.r for gf in self.model.gf if (r,gf) in self.model.c_genMax]	
+
+        constraint_expr = (pyomo.quicksum(self.model.c_genMax[r,gf] - self.model.x_generation[r,gf,t] 
+                        for (r,gf) in gen_limts_indices
+                        for t in self.model.t)
+                        ) >=0  
                         
-                        self.model.gen_limits_rule.add(constraint_expr)
+        self.model.gen_limits_rule.add(constraint_expr)
         
 
     #constraint 3: transmission limits
@@ -313,52 +305,43 @@ class model_opt():
 	
         self.model.trans_limits_rule = pyomo.ConstraintList()
 
-        for r in self.model.r: 
-            for o in self.model.o: 
-                if (r,o) in self.model.c_transCap: 
-                    for t in self.model.t: 
-                        constraint_expr = (
-                        self.model.c_transCap[r,o] - self.model.x_trans[r,o,t]
-                        ) >=0
-                else: 
-                    constraint_expr = (pyomo.Constraint.Skip)
+        trans_limit_indices = [(r, o) for r in self.model.r for o in self.model.o if (r, o) in self.model.c_transCap]
+
+        constraint_expr = (pyomo.quicksum(self.model.c_transCap[r, o] - self.model.x_trans[r, o, t]
+                        for (r, o) in trans_limit_indices
+                        for t in self.model.t)
+                    ) >=0
                     
-                    self.model.trans_limits_rule.add(constraint_expr)
+        self.model.trans_limits_rule.add(constraint_expr)
 	
     # constraint 3a: transmission system balance - system level transmission balancing
     def transBalance(self): 
 
         self.model.trans_balance_rule = pyomo.ConstraintList()
 
-        for r in self.model.r: 
-            for o in self.model.o:
-                if (r,o) in self.model.c_transCap:
-                    for t in self.model.t:
-                        constraint_expr = ( 
-                        self.model.x_trans[r,o,t] - self.model.x_trans[o,r,t]
-                        ) == 0
-                    else: 
-                        constraint_expr = (pyomo.Constraint.Skip)
+        trans_balance_indices = [(r, o) for r in self.model.r for o in self.model.o if (r, o) in self.model.c_transCap]
 
-                        self.model.trans_balance_rule.add(constraint_expr)
+        constraint_expr = (pyomo.quicksum(self.model.x_trans[r, o, t] - self.model.x_trans[o, r, t]
+                        for (r, o) in trans_balance_indices
+                        for t in self.model.t) 
+                    ) == 0
 
+        self.model.trans_balance_rule.add(constraint_expr)
 
     #constraint 4: storage limits (r,t)
     def storLimits(self):
 	
         self.model.maxStorage_rule = pyomo.ConstraintList()
 
-        for r in self.model.r: 
-            if r in self.model.c_storCap:
-                for t in self.model.t: 
-                    constraint_expr = ( 
-                        self.model.c_storCap[r] - self.model.x_storSOC[r,t]
-                    ) >= 0
-            
-                else: 
-                    constraint_expr = (pyomo.Constraint.Skip)
-                
-                    self.model.maxStorage_rule.add(constraint_expr)
+        stor_limit_indices = [r for r in self.model.r if r in self.model.c_storCap]
+
+        constraint_expr = (pyomo.quicksum(
+                self.model.c_storCap[r] - self.model.x_storSOC[r, t]
+                for r in stor_limit_indices
+                for t in self.model.t)
+                ) >=0
+
+        self.model.maxStorage_rule.add(constraint_expr)
 
     #constraint 5: storage state-of-charge (r,t)
     def storSOC(self):
@@ -372,8 +355,8 @@ class model_opt():
                     self.model.storageSOC_rule.add(self.model.x_storSOC[r,t] == 0)
                 else:
                     # For subsequent time steps, apply the constraint
-                    constraint_expr = (
-                        self.model.x_storSOC[r,t] - self.model.x_storSOC[r,t-1] - self.model.x_storIn[r,t-1] * self.model.c_storEff + self.model.x_storOut[r,t-1]  
+                    constraint_expr = (self.model.x_storSOC[r,t] - self.model.x_storSOC[r,t-1] - 
+                                self.model.x_storIn[r,t-1] * self.model.c_storEff + self.model.x_storOut[r,t-1]  
                     ) == 0
                     
                     self.model.storageSOC_rule.add(constraint_expr)
@@ -383,28 +366,29 @@ class model_opt():
     
         self.model.stor_flowIN_rule = pyomo.ConstraintList() 
 
-        for r in self.model.r: 
-            if r in self.model.c_storCap:
-                for t in self.model.t: 
-                    constraint_expr = (
-                        self.model.c_storCap[r] * self.model.c_storFlowCap - self.model.x_storIn[r,t]
+        stor_flowin_indices = [r for r in self.model.r if r in self.model.c_storCap]
+
+        constraint_expr = (pyomo.quicksum(self.model.c_storCap[r] * self.model.c_storFlowCap - self.model.x_storIn[r,t] 
+                        for r in stor_flowin_indices
+                        for t in self.model.t) 
                         ) >= 0 
-                
-                    self.model.stor_flowIN_rule.add(constraint_expr)
+
+        self.model.stor_flowIN_rule.add(constraint_expr)
 
     #constaint 7: storage flow out limits (discharging)
     def storFlowOut(self):
 
         self.model.stor_flowOUT_rule = pyomo.ConstraintList()
 
-        for r in self.model.r: 
-            if r in self.model.c_storCap:
-                for t in self.model.t: 
-                    constraint_expr = (
-                        self.model.c_storCap[r] * self.model.c_storFlowCap - self.model.x_storOut[r,t]
-                    ) >=0
+        stor_flow_out_indices = [r for r in self.model.r if r in self.model.c_storCap]
+        
+        constraint_expr = pyomo.quicksum(
+            self.model.c_storCap[r] * self.model.c_storFlowCap - self.model.x_storOut[r, t]
+            for r in stor_flow_out_indices
+            for t in self.model.t
+        ) >= 0
                 
-                    self.model.stor_flowOUT_rule.add(constraint_expr)
+        self.model.stor_flowOUT_rule.add(constraint_expr)
 
 
     #constraint 8: solar resource capacity limits
@@ -417,8 +401,8 @@ class model_opt():
                 for s in self.model.src: 
                     for c in self.model.cc:
 
-                        constraint_expr = (
-                                self.model.c_solarMax[r,s,c] - (self.model.x_solarNew[r,s,c] + self.model.c_solarCap[r])
+                        constraint_expr = (pyomo.quicksum(
+                                self.model.c_solarMax[r,s,c] - (self.model.x_solarNew[r,s,c] + self.model.c_solarCap[r])) 
                         ) >= 0
                     
                         self.model.solar_install_limits_rule.add(constraint_expr)  
@@ -434,9 +418,9 @@ class model_opt():
                 for w in self.model.wrc: 
                     for c in self.model.cc:
                         
-                        constraint_expr = (
-                                self.model.c_windMax[r,w,c] - (self.model.x_windNew[r,w,c] + self.model.c_windCap[r])
-                        ) >= 0
+                        constraint_expr = (pyomo.quiksum(
+                                self.model.c_windMax[r,w,c] - (self.model.x_windNew[r,w,c] + self.model.c_windCap[r]))
+                        )  >= 0
                         
                         self.model.wind_install_limits_rule.add(constraint_expr)  
 
