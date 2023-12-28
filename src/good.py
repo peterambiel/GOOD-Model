@@ -418,7 +418,7 @@ class model_opt():
                 for w in self.model.wrc: 
                     for c in self.model.cc:
                         
-                        constraint_expr = (pyomo.quiksum(
+                        constraint_expr = (pyomo.quicksum(
                                 self.model.c_windMax[r,w,c] - (self.model.x_windNew[r,w,c] + self.model.c_windCap[r]))
                         )  >= 0
                         
