@@ -237,15 +237,19 @@ class model_opt():
                     for r in self.model.r
                     for t in self.model.t)
         
+        export_indices = [(r,o,t) for r in self.model.r for o in self.model.o for t in self.model.t if (r,o) in self.modelc_transCap]
         export_term = pyomo.quicksum(self.model.x_trans[r,o,t] * self.model.c_transLoss
                     for r in self.model.r 
                     for o in self.model.o 
-                    for t in self.model.t)
+                    for t in self.model.t
+                    for (r,o,t) in export_indices)
 
+        import_indices = [(o,r,t) for o in self.model.o for r in self.modlel.r for t in self.model.t if (o,r) in self.model.c_transCap]
         import_term = pyomo.quicksum(self.model.x_trans[o,r,t] * self.model.c_transLoss
                     for r in self.model.o 
                     for o in self.model.r 
-                    for t in self.model.t)
+                    for t in self.model.t 
+                    for (o,r,t) in import_indices)
         
         demand_indices = [(r,t) for r in self.model.r for t in self.model.t if (r,t) in self.model.c_demandLoad]
         demand_term = pyomo.quicksum(self.model.c_demandLoad[r,t]
