@@ -1,6 +1,7 @@
 import time 
 import pyomo.environ as pyomo
 from pyomo.opt import SolverFactory
+from pyomo.common.timing import TicTocTimer
 
 # add solar transmission cost
 #self.model.T=pyomo.Set(initialize=[idx for idx in range(self.inputs['n_t'])])
@@ -35,94 +36,67 @@ class model_opt():
 		#Initializing the model as a concrete model (as in one that has fixed inputted values)
         self.model=pyomo.ConcreteModel()
 		
-        # timer function
-        def print_time(time0, time1):
-            elasped_time = time1 - time0 
-            return(elasped_time)
+        #add pyomo Timer
+        timer = TicTocTimer()
+
+        #starting timer
+        timer.tic('Starting model build')
 
         #Adding sets
-        self.t0=time.time()
         self.Set()
-        self.t1=time.time()
-        print(f"Set build: {print_time(self.t0, self.t1)}")
-	
+        timer.toc('Set build complete')
+
         #Adding parameters
-        self.t0=time.time()
         self.Param()
-        self.t1=time.time()
-        print(f"Param build: {print_time(self.t0, self.t1)}")
+        timer.toc('Paramater build complete')
 
 		#Adding variables
-        self.t0=time.time()
         self.Variables()
-        self.t1=time.time()
-        print(f"Var build: {print_time(self.t0, self.t1)}")
+        timer.toc('Variable build complete')
 
 		#Adding the objective function
-        self.t0=time.time()
         self.Objective()
-        self.t1=time.time()
-        print(f"Objective build: {print_time(self.t0, self.t1)}")
+        timer.toc('Objective function build complete')
 	
         #constraint 1: genToDemand(t, r) with evload constraint
-        self.t0 = time.time()
         self.genToDemand()
-        self.t1=time.time()
-        print(f"Balancing build: {print_time(self.t0, self.t1)}")
+        timer.toc('Generation-Demand Balancing constraint build complete')
 
         #constraint 2: Generation Limits
-        self.time0 = time.time()
         self.genLimits()
-        self.t1=time.time()
-        print(f"Generation Limits build: {print_time(self.t0, self.t1)}")
-
+        timer.toc('Generation limits constraint complete')
+        
         #constraint 3: transmission limits
-        self.t0=time.time()
         self.transLimits()
-        self.t1=time.time()
-        print(f"Transmission Limits build: {print_time(self.t0, self.t1)}")
+        timer.toc('Transmission limits constraint complete')
 
         #constraint 3a: transission balance
-        self.t0=time.time()
         self.transBalance()
-        self.t1=time.time()
-        print(f"Transmission Balance build: {print_time(self.t0, self.t1)}")
+        timer.toc('System-level transmission balance constraint complete')
 
         #constraint 4: storage limits (r,t)
-        self.t0=time.time()
         self.storLimits()
-        self.t1=time.time()
-        print(f"Storage Limits Constraints build: {print_time(self.t0, self.t1)}")
+        timer.toc('Storage limits constraint build complete')
 
         #constraint 5: storage state-of-charge (r,t)
-        self.t0=time.time()
         self.storSOC()
-        self.t1=time.time()
-        print(f"Storage SOC Constraint build: {print_time(self.t0, self.t1)}")
+        timer.toc('Storage SOC constraint build complete')
 
         #constraint 6: storage flow-in limits (charging)
-        self.t0=time.time()
         self.storFlowIn()
-        self.t1=time.time()
-        print(f"Storage Charge Consttraint build: {print_time(self.t0, self.t1)}")
+        timer.toc('Storage charging constraint build complete')
 
         #constaint 7: storage flow out limits (discharging)
-        self.t0=time.time()
         self.storFlowOut()
-        self.t1=time.time()
-        print(f"Storage Discharge Constraint build: {print_time(self.t0, self.t1)}")
+        timer.toc('Storage discharging constraint complete')
 
         #constraint 8: solar resource capacity limits
-        self.t0=time.time()
         self.solarCapLimits()
-        self.t1=time.time()
-        print(f"Solar Capacity Constraint build: {print_time(self.t0, self.t1)}")
+        timer.toc('Solar resource capacity constraint build complete')
 
         #constraint 9: wind resource capacity limts
-        self.t0=time.time()
         self.windCapLimits()
-        self.t1=time.time()
-        print(f"Wind Capacity Constraint build: {print_time(self.t0, self.t1)}")
+        timer.toc('Wind resource capacity constraint build complete')
 
         #constraint 10: electricity import limits
         #self.importLimits()
